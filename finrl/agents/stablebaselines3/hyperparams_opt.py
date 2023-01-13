@@ -10,7 +10,6 @@ from stable_baselines3.common.noise import OrnsteinUhlenbeckActionNoise
 from torch import nn as nn
 from utils import linear_schedule
 
-
 def sample_ppo_params(trial: optuna.Trial) -> dict[str, Any]:
     """
     Sampler for PPO hyperparams.
@@ -27,8 +26,6 @@ def sample_ppo_params(trial: optuna.Trial) -> dict[str, Any]:
     )
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1)
     lr_schedule = "constant"
-    # Uncomment to enable learning rate schedule
-    # lr_schedule = trial.suggest_categorical('lr_schedule', ['linear', 'constant'])
     ent_coef = trial.suggest_loguniform("ent_coef", 0.00000001, 0.1)
     clip_range = trial.suggest_categorical("clip_range", [0.1, 0.2, 0.3, 0.4])
     n_epochs = trial.suggest_categorical("n_epochs", [1, 5, 10, 20])
@@ -40,25 +37,15 @@ def sample_ppo_params(trial: optuna.Trial) -> dict[str, Any]:
     )
     vf_coef = trial.suggest_uniform("vf_coef", 0, 1)
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium"])
-    # Uncomment for gSDE (continuous actions)
-    # log_std_init = trial.suggest_uniform("log_std_init", -4, 1)
-    # Uncomment for gSDE (continuous action)
-    # sde_sample_freq = trial.suggest_categorical("sde_sample_freq", [-1, 8, 16, 32, 64, 128, 256])
-    # Orthogonal initialization
     ortho_init = False
-    # ortho_init = trial.suggest_categorical('ortho_init', [False, True])
-    # activation_fn = trial.suggest_categorical('activation_fn', ['tanh', 'relu', 'elu', 'leaky_relu'])
     activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
 
-    # TODO: account when using multiple envs
     if batch_size > n_steps:
         batch_size = n_steps
 
     if lr_schedule == "linear":
         learning_rate = linear_schedule(learning_rate)
 
-    # Independent networks usually work best
-    # when not working with images
     net_arch = {
         "small": [dict(pi=[64, 64], vf=[64, 64])],
         "medium": [dict(pi=[256, 256], vf=[256, 256])],
@@ -82,9 +69,7 @@ def sample_ppo_params(trial: optuna.Trial) -> dict[str, Any]:
         "gae_lambda": gae_lambda,
         "max_grad_norm": max_grad_norm,
         "vf_coef": vf_coef,
-        # "sde_sample_freq": sde_sample_freq,
         "policy_kwargs": dict(
-            # log_std_init=log_std_init,
             net_arch=net_arch,
             activation_fn=activation_fn,
             ortho_init=ortho_init,
@@ -108,14 +93,10 @@ def sample_trpo_params(trial: optuna.Trial) -> dict[str, Any]:
     )
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1)
     lr_schedule = "constant"
-    # Uncomment to enable learning rate schedule
-    # lr_schedule = trial.suggest_categorical('lr_schedule', ['linear', 'constant'])
-    # line_search_shrinking_factor = trial.suggest_categorical("line_search_shrinking_factor", [0.6, 0.7, 0.8, 0.9])
     n_critic_updates = trial.suggest_categorical(
         "n_critic_updates", [5, 10, 20, 25, 30]
     )
     cg_max_steps = trial.suggest_categorical("cg_max_steps", [5, 10, 20, 25, 30])
-    # cg_damping = trial.suggest_categorical("cg_damping", [0.5, 0.2, 0.1, 0.05, 0.01])
     target_kl = trial.suggest_categorical(
         "target_kl", [0.1, 0.05, 0.03, 0.02, 0.01, 0.005, 0.001]
     )
@@ -123,25 +104,15 @@ def sample_trpo_params(trial: optuna.Trial) -> dict[str, Any]:
         "gae_lambda", [0.8, 0.9, 0.92, 0.95, 0.98, 0.99, 1.0]
     )
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium"])
-    # Uncomment for gSDE (continuous actions)
-    # log_std_init = trial.suggest_uniform("log_std_init", -4, 1)
-    # Uncomment for gSDE (continuous action)
-    # sde_sample_freq = trial.suggest_categorical("sde_sample_freq", [-1, 8, 16, 32, 64, 128, 256])
-    # Orthogonal initialization
     ortho_init = False
-    # ortho_init = trial.suggest_categorical('ortho_init', [False, True])
-    # activation_fn = trial.suggest_categorical('activation_fn', ['tanh', 'relu', 'elu', 'leaky_relu'])
     activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
 
-    # TODO: account when using multiple envs
     if batch_size > n_steps:
         batch_size = n_steps
 
     if lr_schedule == "linear":
         learning_rate = linear_schedule(learning_rate)
 
-    # Independent networks usually work best
-    # when not working with images
     net_arch = {
         "small": [dict(pi=[64, 64], vf=[64, 64])],
         "medium": [dict(pi=[256, 256], vf=[256, 256])],
@@ -158,16 +129,12 @@ def sample_trpo_params(trial: optuna.Trial) -> dict[str, Any]:
         "n_steps": n_steps,
         "batch_size": batch_size,
         "gamma": gamma,
-        # "cg_damping": cg_damping,
         "cg_max_steps": cg_max_steps,
-        # "line_search_shrinking_factor": line_search_shrinking_factor,
         "n_critic_updates": n_critic_updates,
         "target_kl": target_kl,
         "learning_rate": learning_rate,
         "gae_lambda": gae_lambda,
-        # "sde_sample_freq": sde_sample_freq,
         "policy_kwargs": dict(
-            # log_std_init=log_std_init,
             net_arch=net_arch,
             activation_fn=activation_fn,
             ortho_init=ortho_init,
@@ -203,13 +170,8 @@ def sample_a2c_params(trial: optuna.Trial) -> dict[str, Any]:
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1)
     ent_coef = trial.suggest_loguniform("ent_coef", 0.00000001, 0.1)
     vf_coef = trial.suggest_uniform("vf_coef", 0, 1)
-    # Uncomment for gSDE (continuous actions)
-    # log_std_init = trial.suggest_uniform("log_std_init", -4, 1)
     ortho_init = trial.suggest_categorical("ortho_init", [False, True])
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium"])
-    # sde_net_arch = trial.suggest_categorical("sde_net_arch", [None, "tiny", "small"])
-    # full_std = trial.suggest_categorical("full_std", [False, True])
-    # activation_fn = trial.suggest_categorical('activation_fn', ['tanh', 'relu', 'elu', 'leaky_relu'])
     activation_fn = trial.suggest_categorical("activation_fn", ["tanh", "relu"])
 
     if lr_schedule == "linear":
@@ -219,12 +181,6 @@ def sample_a2c_params(trial: optuna.Trial) -> dict[str, Any]:
         "small": [dict(pi=[64, 64], vf=[64, 64])],
         "medium": [dict(pi=[256, 256], vf=[256, 256])],
     }[net_arch]
-
-    # sde_net_arch = {
-    #     None: None,
-    #     "tiny": [64],
-    #     "small": [64, 64],
-    # }[sde_net_arch]
 
     activation_fn = {
         "tanh": nn.Tanh,
@@ -244,11 +200,8 @@ def sample_a2c_params(trial: optuna.Trial) -> dict[str, Any]:
         "use_rms_prop": use_rms_prop,
         "vf_coef": vf_coef,
         "policy_kwargs": dict(
-            # log_std_init=log_std_init,
             net_arch=net_arch,
-            # full_std=full_std,
             activation_fn=activation_fn,
-            # sde_net_arch=sde_net_arch,
             ortho_init=ortho_init,
         ),
     }
@@ -274,36 +227,22 @@ def sample_sac_params(trial: optuna.Trial) -> dict[str, Any]:
     learning_starts = trial.suggest_categorical(
         "learning_starts", [0, 1000, 10000, 20000]
     )
-    # train_freq = trial.suggest_categorical('train_freq', [1, 10, 100, 300])
     train_freq = trial.suggest_categorical(
         "train_freq", [1, 4, 8, 16, 32, 64, 128, 256, 512]
     )
-    # Polyak coeff
     tau = trial.suggest_categorical("tau", [0.001, 0.005, 0.01, 0.02, 0.05, 0.08])
-    # gradient_steps takes too much time
-    # gradient_steps = trial.suggest_categorical('gradient_steps', [1, 100, 300])
     gradient_steps = train_freq
-    # ent_coef = trial.suggest_categorical('ent_coef', ['auto', 0.5, 0.1, 0.05, 0.01, 0.0001])
     ent_coef = "auto"
-    # You can comment that out when not using gSDE
     log_std_init = trial.suggest_uniform("log_std_init", -4, 1)
-    # NOTE: Add "verybig" to net_arch when tuning HER
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium", "big"])
-    # activation_fn = trial.suggest_categorical('activation_fn', [nn.Tanh, nn.ReLU, nn.ELU, nn.LeakyReLU])
 
     net_arch = {
         "small": [64, 64],
         "medium": [256, 256],
         "big": [400, 300],
-        # Uncomment for tuning HER
-        # "large": [256, 256, 256],
-        # "verybig": [512, 512, 512],
     }[net_arch]
 
     target_entropy = "auto"
-    # if ent_coef == 'auto':
-    #     # target_entropy = trial.suggest_categorical('target_entropy', ['auto', 5, 1, 0, -1, -5, -10, -20, -50])
-    #     target_entropy = trial.suggest_uniform('target_entropy', -10, 10)
 
     hyperparams = {
         "gamma": gamma,
@@ -321,7 +260,6 @@ def sample_sac_params(trial: optuna.Trial) -> dict[str, Any]:
 
     if trial.using_her_replay_buffer:
         hyperparams = sample_her_params(trial, hyperparams)
-
     return hyperparams
 
 
@@ -342,7 +280,6 @@ def sample_td3_params(trial: optuna.Trial) -> dict[str, Any]:
     buffer_size = trial.suggest_categorical(
         "buffer_size", [int(1e4), int(1e5), int(1e6)]
     )
-    # Polyak coeff
     tau = trial.suggest_categorical("tau", [0.001, 0.005, 0.01, 0.02, 0.05, 0.08])
 
     train_freq = trial.suggest_categorical(
@@ -355,16 +292,12 @@ def sample_td3_params(trial: optuna.Trial) -> dict[str, Any]:
     )
     noise_std = trial.suggest_uniform("noise_std", 0, 1)
 
-    # NOTE: Add "verybig" to net_arch when tuning HER
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium", "big"])
-    # activation_fn = trial.suggest_categorical('activation_fn', [nn.Tanh, nn.ReLU, nn.ELU, nn.LeakyReLU])
 
     net_arch = {
         "small": [64, 64],
         "medium": [256, 256],
         "big": [400, 300],
-        # Uncomment for tuning HER
-        # "verybig": [256, 256, 256],
     }[net_arch]
 
     hyperparams = {
@@ -410,7 +343,6 @@ def sample_ddpg_params(trial: optuna.Trial) -> dict[str, Any]:
     buffer_size = trial.suggest_categorical(
         "buffer_size", [int(1e4), int(1e5), int(1e6)]
     )
-    # Polyak coeff
     tau = trial.suggest_categorical("tau", [0.001, 0.005, 0.01, 0.02, 0.05, 0.08])
 
     train_freq = trial.suggest_categorical(
@@ -421,12 +353,9 @@ def sample_ddpg_params(trial: optuna.Trial) -> dict[str, Any]:
     noise_type = trial.suggest_categorical(
         "noise_type", ["ornstein-uhlenbeck", "normal", None]
     )
+    
     noise_std = trial.suggest_uniform("noise_std", 0, 1)
-
-    # NOTE: Add "verybig" to net_arch when tuning HER (see TD3)
     net_arch = trial.suggest_categorical("net_arch", ["small", "medium", "big"])
-    # activation_fn = trial.suggest_categorical('activation_fn', [nn.Tanh, nn.ReLU, nn.ELU, nn.LeakyReLU])
-
     net_arch = {"small": [64, 64], "medium": [256, 256], "big": [400, 300]}[net_arch]
 
     hyperparams = {
@@ -538,7 +467,6 @@ def sample_tqc_params(trial: optuna.Trial) -> dict[str, Any]:
     :param trial:
     :return:
     """
-    # TQC is SAC + Distributional RL
     hyperparams = sample_sac_params(trial)
 
     n_quantiles = trial.suggest_int("n_quantiles", 5, 50)
@@ -559,7 +487,6 @@ def sample_qrdqn_params(trial: optuna.Trial) -> dict[str, Any]:
     :param trial:
     :return:
     """
-    # TQC is DQN + Distributional RL
     hyperparams = sample_dqn_params(trial)
 
     n_quantiles = trial.suggest_int("n_quantiles", 5, 200)
@@ -574,9 +501,7 @@ def sample_ars_params(trial: optuna.Trial) -> dict[str, Any]:
     :param trial:
     :return:
     """
-    # n_eval_episodes = trial.suggest_categorical("n_eval_episodes", [1, 2])
     n_delta = trial.suggest_categorical("n_delta", [4, 8, 6, 32, 64])
-    # learning_rate = trial.suggest_categorical("learning_rate", [0.01, 0.02, 0.025, 0.03])
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-5, 1)
     delta_std = trial.suggest_categorical(
         "delta_std", [0.01, 0.02, 0.025, 0.03, 0.05, 0.1, 0.2, 0.3]
@@ -587,27 +512,12 @@ def sample_ars_params(trial: optuna.Trial) -> dict[str, Any]:
     zero_policy = trial.suggest_categorical("zero_policy", [True, False])
     n_top = max(int(top_frac_size * n_delta), 1)
 
-    # net_arch = trial.suggest_categorical("net_arch", ["linear", "tiny", "small"])
-
-    # Note: remove bias to be as the original linear policy
-    # and do not squash output
-    # Comment out when doing hyperparams search with linear policy only
-    # net_arch = {
-    #     "linear": [],
-    #     "tiny": [16],
-    #     "small": [32],
-    # }[net_arch]
-
-    # TODO: optimize the alive_bonus_offset too
-
     return {
-        # "n_eval_episodes": n_eval_episodes,
         "n_delta": n_delta,
         "learning_rate": learning_rate,
         "delta_std": delta_std,
         "n_top": n_top,
         "zero_policy": zero_policy,
-        # "policy_kwargs": dict(net_arch=net_arch),
     }
 
 
