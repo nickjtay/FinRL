@@ -1,4 +1,3 @@
-# DRL models from Stable Baselines 3
 from __future__ import annotations
 
 import time
@@ -113,17 +112,13 @@ class DRLAgent:
         """make a prediction"""
         account_memory = []
         actions_memory = []
-        #         state_memory=[] #add memory pool to store states
         test_env.reset()
         for i in range(len(environment.df.index.unique())):
             action, _states = model.predict(test_obs, deterministic=deterministic)
-            # account_memory = test_env.env_method(method_name="save_asset_memory")
-            # actions_memory = test_env.env_method(method_name="save_action_memory")
             test_obs, rewards, dones, info = test_env.step(action)
             if i == (len(environment.df.index.unique()) - 2):
                 account_memory = test_env.env_method(method_name="save_asset_memory")
                 actions_memory = test_env.env_method(method_name="save_action_memory")
-            #                 state_memory=test_env.env_method(method_name="save_state_memory") # add current state to state memory
             if dones[0]:
                 print("hit end!")
                 break
@@ -134,15 +129,13 @@ class DRLAgent:
         if model_name not in MODELS:
             raise NotImplementedError("NotImplementedError")
         try:
-            # load agent
             model = MODELS[model_name].load(cwd)
             print("Successfully load model", cwd)
         except BaseException:
             raise ValueError("Fail to load agent!")
 
-        # test on the testing env
         state = environment.reset()
-        episode_returns = []  # the cumulative_return / initial_account
+        episode_returns = []  
         episode_total_assets = [environment.initial_total_asset]
         done = False
         while not done:
@@ -216,7 +209,6 @@ class DRLEnsembleAgent:
         df_total_value = pd.read_csv(
             f"results/account_value_validation_{model_name}_{iteration}.csv"
         )
-        # If the agent did not make any transaction
         if df_total_value["daily_return"].var() == 0:
             if df_total_value["daily_return"].mean() > 0:
                 return np.inf
@@ -280,7 +272,6 @@ class DRLEnsembleAgent:
     ):
         """make a prediction based on trained model"""
 
-        ## trading env
         trade_data = data_split(
             self.df,
             start=self.unique_trade_date[iter_num - self.rebalance_window],
@@ -329,8 +320,6 @@ class DRLEnsembleAgent:
     ):
         """Ensemble Strategy that combines PPO, A2C and DDPG"""
         print("============Start Ensemble Strategy============")
-        # for ensemble model, it's necessary to feed the last state
-        # of the previous model to the current model as the initial state
         last_state_ensemble = []
 
         ppo_sharpe_list = []
@@ -368,14 +357,10 @@ class DRLEnsembleAgent:
             print("============================================")
             ## initial state is empty
             if i - self.rebalance_window - self.validation_window == 0:
-                # inital state
                 initial = True
             else:
-                # previous state
                 initial = False
 
-            # Tuning trubulence index based on historical data
-            # Turbulence lookback window is one quarter (63 days)
             end_date_index = self.df.index[
                 self.df["date"]
                 == self.unique_trade_date[
@@ -395,8 +380,6 @@ class DRLEnsembleAgent:
             historical_turbulence_mean = np.mean(
                 historical_turbulence.turbulence.values
             )
-
-            # print(historical_turbulence_mean)
 
             if historical_turbulence_mean > insample_turbulence_threshold:
                 # if the mean of the historical data is greater than the 90% quantile of insample turbulence data
@@ -576,7 +559,7 @@ class DRLEnsembleAgent:
                 tb_log_name=f"ddpg_{i}",
                 iter_num=i,
                 total_timesteps=timesteps_dict["ddpg"],
-            )  # 50_000
+            ) 
             print(
                 "======DDPG Validation from: ",
                 validation_start_date,
@@ -624,38 +607,16 @@ class DRLEnsembleAgent:
                 "to ",
                 self.unique_trade_date[i - self.rebalance_window],
             )
-            # Environment setup for model retraining up to first trade date
-            # train_full = data_split(self.df, start=self.train_period[0], end=self.unique_trade_date[i - self.rebalance_window])
-            # self.train_full_env = DummyVecEnv([lambda: StockTradingEnv(train_full,
-            #                                                    self.stock_dim,
-            #                                                    self.hmax,
-            #                                                    self.initial_amount,
-            #                                                    self.buy_cost_pct,
-            #                                                    self.sell_cost_pct,
-            #                                                    self.reward_scaling,
-            #                                                    self.state_space,
-            #                                                    self.action_space,
-            #                                                    self.tech_indicator_list,
-            #                                                    print_verbosity=self.print_verbosity)])
-            # Model Selection based on sharpe ratio
             if (sharpe_ppo >= sharpe_a2c) & (sharpe_ppo >= sharpe_ddpg):
                 model_use.append("PPO")
                 model_ensemble = model_ppo
 
-                # model_ensemble = self.get_model("ppo",self.train_full_env,policy="MlpPolicy",model_kwargs=PPO_model_kwargs)
-                # model_ensemble = self.train_model(model_ensemble, "ensemble", tb_log_name="ensemble_{}".format(i), iter_num = i, total_timesteps=timesteps_dict['ppo']) #100_000
             elif (sharpe_a2c > sharpe_ppo) & (sharpe_a2c > sharpe_ddpg):
                 model_use.append("A2C")
                 model_ensemble = model_a2c
-
-                # model_ensemble = self.get_model("a2c",self.train_full_env,policy="MlpPolicy",model_kwargs=A2C_model_kwargs)
-                # model_ensemble = self.train_model(model_ensemble, "ensemble", tb_log_name="ensemble_{}".format(i), iter_num = i, total_timesteps=timesteps_dict['a2c']) #100_000
             else:
                 model_use.append("DDPG")
                 model_ensemble = model_ddpg
-
-                # model_ensemble = self.get_model("ddpg",self.train_full_env,policy="MlpPolicy",model_kwargs=DDPG_model_kwargs)
-                # model_ensemble = self.train_model(model_ensemble, "ensemble", tb_log_name="ensemble_{}".format(i), iter_num = i, total_timesteps=timesteps_dict['ddpg']) #50_000
 
             ############## Training and Validation ends ##############
 
