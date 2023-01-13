@@ -1,4 +1,3 @@
-# DRL models from RLlib
 from __future__ import annotations
 
 import ray
