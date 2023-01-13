@@ -233,13 +233,7 @@ class DRLlibv2:
             to_dataframe = self.dataframe_save
 
         results_df.to_csv(to_dataframe, mode=mode)
-
         best_result = self.results.get_best_result()
-        # best_result = self.results.get_best_result()
-        # best_metric = best_result.metrics
-        # best_checkpoint = best_result.checkpoint
-        # best_trial_dir = best_result.log_dir
-        # results_df = self.results.get_dataframe()
 
         return results_df, best_result
 
@@ -254,8 +248,6 @@ class DRLlibv2:
         """
         Restore errored or stopped trials
         """
-        # if restore_search:
-        # self.search_alg = self.search_alg.restore_from_dir(self.local_dir)
         if checkpoint_path == "":
             checkpoint_path = self.results.get_best_result().checkpoint._local_path
 
@@ -281,6 +273,5 @@ class DRLlibv2:
             checkpoint = self.results.get_best_result().checkpoint
 
         testing_agent = Algorithm.from_checkpoint(checkpoint)
-        # testing_agent.config['env'] = test_env_name
 
         return testing_agent
