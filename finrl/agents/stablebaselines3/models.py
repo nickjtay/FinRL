@@ -308,7 +308,6 @@ class DRLEnsembleAgent:
             action, _states = model.predict(trade_obs)
             trade_obs, rewards, dones, info = trade_env.step(action)
             if i == (len(trade_data.index.unique()) - 2):
-                # print(env_test.render())
                 last_state = trade_env.render()
 
         df_last_state = pd.DataFrame({"last_state": last_state})
